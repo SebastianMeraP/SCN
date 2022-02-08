@@ -1,0 +1,36 @@
+//Levantar el CMS de Wordpress con salida en el puerto 8080 con conexión a la base de datos worpress01
+//creada en el contendor mariadb01.
+
+1)Descargar imagen del wordpress. 
+	docker pull wordpress:4.7.2-apache
+2)Descargar imagen de mariadb.
+	docker pull mariadb:10.0.29
+3)Crear contenedor asignando el puerto 80
+	docker run --name wordpress01 -d -p 8080:80 wordpress:4.7.2-apache
+4)Creas el contenedor de la Base de datos
+	docker run --name mariadb01 -d mariadb:10.0.29
+5)Parametros de la base de datos 
+	docker run --name mariadb01 -d -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=wordpress01 -e MYSQL_USER=user -e MYSQL_PASSWORD=userP mariadb:10.0.29
+
+//Realizar la conexión empleando bridge FrontEnd y BackEnd.
+1)Crear una nueva network con el driver "bridge" para FrontEnd
+	docker network create --driver bridge FrontEnd
+2)Crear una nueva network con el driver "bridge" para BackEnd
+	docker network create --driver bridge BackEnd
+3)Crear el wordpress y mariadb
+	docker run --name wordpress02 -d -p 80:80 --network=FrontEnd  wordpress:4.7.2-apache 
+	docker run --name mariadb02 -d -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=wordpress02 -e MYSQL_USER=user -e MYSQL_PASSWORD=userP --network=BackEnd  mariadb:10.0.29
+5)Conectar la red del BackEnd 
+	docker network connect BackEnd wordpress01
+
+/*Crear dos volumenes uno para wordpress llamado VL_wordpress01 compartido en el Host con la dirección
+/var/www/html y otro para mariadb01 llamado VL_mariadb01 compartida en el host
+con la dirección /var/lib/mysql.*/
+1)Crear network BackEnd
+	docker network create --driver bridge BackEnd
+2)Crear network FrontEnd
+	docker network create --driver bridge FrontEnd
+3)Crear contenedor de wordpress asignando el puerto 80, determinando su destionno dentro del contenedor (dst) 
+	docker run --name wordpress01 -d -p 80:80 --mount src=VL_wordpress01,dst=/var/www/html --network=FrontEnd wordpress:4.7.2-apache
+4)Crear contenedor de mariadb01, determinando su destionno dentro del contenedor (dst)
+	docker run --name mariadb01 -d -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=wordpress01 -e MYSQL_USER=user -e MYSQL_PASSWORD=userP --network=BackEnd --mount src=VL_mariadb01,dst=/var/lib/mysql mariadb:10.0.29
