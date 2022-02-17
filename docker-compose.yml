@@ -1,0 +1,67 @@
+version: '3.8'
+#Declaramos los servicios
+services:
+    #Declaramos el servicio de node-red
+    node-red:
+    #Dpendera de influx (BD)
+        depends_on:
+            - influx
+        #Ponemos nombre al contenedor
+        container_name: nodered
+        #Colocamos la imagen de node-red
+        image: nodered/node-red:latest
+        #Asignamos los puertos que se van a utilizar
+        ports:
+            - 1880:1880
+        #Restablecemos cada que se utilice docker
+        restart: always
+        #Es la ruta en donde se almacenara la información
+        volumes:
+            - ./data:/data
+
+    #Declaramos el servicio de influx
+    influx:
+    #Ponemos nombre al contenedor
+        container_name: influxdb
+        #Colocamos la imagen de influx
+        image: influxdb:latest
+        #Variables de entorno
+        environment:
+            - INFLUXDB_HTTP_AUTH_ENABLED=TRUE
+            - INFLUXDB_ADMIN_USER=admin
+            - INFLUXDB_ADMIN_PASSWORD=admin
+            - INFLUXDB_USER=user
+            - INFLUXDB_USER_PASSWORD=user
+            - INFLUXDB_READ_USER=user
+            - INFLUXDB_READ_USER_PASSWORD=userR
+            - INFLUXDB_DB=influxdb
+        #Es la ruta en donde se almacenara la información
+        volumes:
+            - influx_data:/var/lib/influxdb
+
+    #Declaramos el servicio de grafana
+    grafana:
+     #Dpendera de influx (BD)
+        depends_on:
+            - influx
+        #Ponemos nombre al contenedor
+        container_name: grafana
+        #Colocamos la imagen de grafana
+        image: grafana/grafana:latest
+        #Variables de entorno
+        environment:
+            - GF_SECURITY_ADMIN_USER=admin
+            - GF_SECURITY_ADMIN_PASSWORD=admin
+            - GRAFANA_INFLUX_DB=influxdb
+            - GRAFANA_INFLUX_USER=admin
+            - GRAFANA_INFLUX_PASSWORD=admin
+        #Es la ruta en donde se almacenara la información
+        volumes:
+            - grafana_data:/var/lib/grafana
+        #Se asigna el puerto que se utilizará
+        ports:
+            - 3000:3000
+#Aqui se guardara la información
+volumes:
+    grafana_data:
+    influx_data:
